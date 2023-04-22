@@ -23,6 +23,33 @@ contract DEX {
         require(allowance > 0, "you must allow this address atleast one token");
         bool sent = associatedToken.transferFrom(msg.sender,address(this), allowance);
         require(sent, "failed to send");
+    }
 
+    function withdrawTokens() external onlyOwner {
+        uint256 balance = associatedToken.balanceOf(address(this));
+        associatedToken.transfer(msg.sender, balance);
+    }
+
+    function withdrawFunds() external onlyOwner {
+        (bool sent, ) = payable(msg.sender).call{value: address(this).balance} (
+            ""
+        );
+        require(sent);
+    }
+
+    function getPrice(uint numTokens) public view returns (uint) {
+        return numTokens * price;
+    }
+
+    function buy (uint numTokens) external payable {
+        require(numTokens <= getTokenBalance(), "not enough tokens");
+        uint256 priceForTokens = getPrice(numTokens);
+        require(msg.value == priceForTokens,"Invalid value sent");
+
+        associatedToken.transfer(msg.sender, numTokens);
+    }
+
+    function getTokenBalance() public view returns(uint256) {
+        return associatedToken.balanceOf(address(this));
     }
 }
